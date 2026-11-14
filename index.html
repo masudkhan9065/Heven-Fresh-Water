@@ -54,8 +54,6 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 #printArea p{color:#000;font-size:13px}
 .manCard{background:#0e2f4a;border:2px solid #00bfff;border-radius:10px;padding:10px;margin-bottom:8px;line-height:1.7}
 .overdueCard{background:#3a0a0a;border:2px solid #ff1744;border-radius:10px;padding:8px;margin-bottom:6px;line-height:1.6}
-.lockBar{background:#3a0a0a;border:1px solid #ff1744;border-radius:6px;padding:7px;text-align:center;font-size:11px;line-height:1.6;margin:8px}
-.lockBar.open{background:#0a3a0a;border-color:#00e676}
 @media print{body{background:#fff}.app{border:none;max-width:100%;background:#fff;color:#000}.noPrint{display:none!important}.section{display:none!important}.section.printShow{display:block!important;background:#fff!important;color:#000!important;border:none}.section.printShow *{color:#000!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
 </style>
 </head>
@@ -70,7 +68,6 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 </div>
 <div class="app">
 <div class="head"><b>💧 Heaven Fresh Water</b><br>বিশুদ্ধ পানি - সবার জন্য<br><span class="small">Masud Khan - <a href="tel:01723339065" style="color:#bfeaff">01723-339065</a></span><br><span class="small" style="background:#00bfff;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px">👥 মোট সদস্য: <span id="totalMembers">0</span> জন</span><br><span id="roleBadge" class="small" style="background:#ffca28;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px"></span> <button onclick="logout()" class="noPrint" style="background:#c62828;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px">লগআউট</button></div>
-<div id="dateLockBar" class="lockBar noPrint">🔒 পিছনের তারিখ লক করা আছে<br><span class="small">আজকের তারিখ: <span id="todayTxt"></span> | পিছনে যেতে পাসওয়ার্ড লাগবে</span><br><button onclick="unlockPastManually()" style="background:#ffca28;color:#000;border:none;padding:5px 12px;border-radius:5px;font-weight:800;margin-top:4px">🔓 পিছনের তারিখ খুলুন</button></div>
 <div class="cards">
 <div class="card"><small>আজকের বিক্রি</small><h2 id="todaySale">৳0</h2></div>
 <div class="card"><small>মোট বকেয়া</small><h2 id="totalDue">৳0</h2></div>
@@ -239,42 +236,28 @@ const VIEWER_PASS="Heven123";
 const DELIVERY_MEN=["মোঃ মাসুদ খান","মোঃ শাহিন শেখ"];
 let ROLE=localStorage.getItem("HEAVEN_ROLE")||"";
 let isAdmin=false;
-// === DATE LOCK SYSTEM START ===
+// === DATE LOCK - SILENT ===
 let unlockedPastDate="";
 function getTodayStr(){ let d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function isPastDate(d){ if(!d) return false; return d < getTodayStr(); }
-function updateLockBar(){
-  let el=document.getElementById("dateLockBar"); let t=document.getElementById("todayTxt");
-  if(t) t.innerText=getTodayStr();
-  if(!el) return;
-  if(unlockedPastDate){
-    el.className="lockBar open noPrint";
-    el.innerHTML="✅ পিছনের তারিখ খোলা: <b>"+unlockedPastDate+"</b><br><span class='small'>আজকে / সামনে গেলেই আবার লক হয়ে যাবে</span><br><button onclick='lockPastNow()' style='background:#c62828;color:#fff;border:none;padding:5px 12px;border-radius:5px;font-weight:800;margin-top:4px'>🔒 আবার লক করুন</button>";
-  } else {
-    el.className="lockBar noPrint";
-    el.innerHTML="🔒 পিছনের তারিখ লক করা আছে<br><span class='small'>আজকের তারিখ: "+getTodayStr()+" | পিছনে যেতে পাসওয়ার্ড লাগবে</span><br><button onclick='unlockPastManually()' style='background:#ffca28;color:#000;border:none;padding:5px 12px;border-radius:5px;font-weight:800;margin-top:4px'>🔓 পিছনের তারিখ খুলুন</button>";
-  }
-}
-function lockPastNow(){ unlockedPastDate=""; updateLockBar(); alert("🔒 পিছনের তারিখ আবার লক হয়ে গেছে।"); }
+function updateLockBar(){}
+function lockPastNow(){ unlockedPastDate=""; }
 function unlockPastManually(){
   if(!isAdmin){ alert("শুধু এডমিন পিছনের তারিখ খুলতে পারবেন।"); return; }
   let d=prompt("কোন পিছনের তারিখ খুলবেন? (YYYY-MM-DD) যেমন 2026-11-13");
   if(!d) return; d=d.trim();
-  if(!isPastDate(d)){ alert("এইটা পিছনের তারিখ না। আজকের / সামনের তারিখ এমনিতেই খোলা।"); return; }
+  if(!isPastDate(d)){ alert("এইটা পিছনের তারিখ না।"); return; }
   let p=prompt("🔒 এডমিন পাসওয়ার্ড দিন:");
-  if(p===ADMIN_PASS){ unlockedPastDate=d; updateLockBar(); alert("✅ "+d+" খুলে গেছে!"); }
+  if(p===ADMIN_PASS){ unlockedPastDate=d; alert("✅ "+d+" খুলে গেছে!"); }
   else alert("❌ ভুল পাসওয়ার্ড!");
 }
 function checkDateLock(d){
   if(!d) return true;
-  if(!isPastDate(d)){
-    if(unlockedPastDate){ unlockedPastDate=""; updateLockBar(); }
-    return true;
-  }
+  if(!isPastDate(d)){ if(unlockedPastDate){ unlockedPastDate=""; } return true; }
   if(unlockedPastDate===d) return true;
   if(!isAdmin){ alert("🔒 পিছনের তারিখ লক! শুধু এডমিন খুলতে পারবেন।"); return false; }
   let p=prompt("🔒 পিছনের তারিখ ("+d+") লক করা!\nএডমিন পাসওয়ার্ড দিন:");
-  if(p===ADMIN_PASS){ unlockedPastDate=d; updateLockBar(); alert("✅ খুলে গেছে! এখন "+d+" তে কাজ করতে পারবেন।\nসামনের তারিখে গেলেই আবার লক হবে।"); return true; }
+  if(p===ADMIN_PASS){ unlockedPastDate=d; alert("✅ খুলে গেছে! এখন "+d+" তে কাজ করতে পারবেন।\nসামনের তারিখে গেলেই আবার লক হবে।"); return true; }
   alert("❌ ভুল পাসওয়ার্ড!"); return false;
 }
 function guardDateInputs(){
@@ -287,15 +270,14 @@ function guardDateInputs(){
       if(this.id==="repDay") renderReport();
     });
   });
-  updateLockBar();
 }
 document.addEventListener("DOMContentLoaded", guardDateInputs);
-// === DATE LOCK SYSTEM END ===
+// === DATE LOCK END ===
 function applyRole(){
   if(ROLE==="admin"){ isAdmin=true; document.body.classList.remove("viewer"); document.getElementById("loginScreen").style.display="none"; document.getElementById("roleBadge").innerText="👑 এডমিন - Masud Khan"; }
   else if(ROLE==="viewer"){ isAdmin=false; document.body.classList.add("viewer"); document.getElementById("loginScreen").style.display="none"; document.getElementById("roleBadge").innerText="👁️ শেয়ারহোল্ডার - শুধু দেখা + কল"; }
   else { document.getElementById("loginScreen").style.display="flex"; }
-  setTimeout(guardDateInputs,200); updateLockBar();
+  setTimeout(guardDateInputs,200);
 }
 function doLogin(){
   let p=document.getElementById("loginPass").value.trim();
@@ -303,7 +285,7 @@ function doLogin(){
   else if(p===VIEWER_PASS){ ROLE="viewer"; localStorage.setItem("HEAVEN_ROLE","viewer"); applyRole(); render(); renderReport(); }
   else { document.getElementById("loginMsg").innerText="ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।"; }
 }
-function logout(){ localStorage.removeItem("HEAVEN_ROLE"); ROLE=""; isAdmin=false; unlockedPastDate=""; document.body.classList.remove("viewer"); document.getElementById("loginScreen").style.display="flex"; document.getElementById("loginPass").value=""; updateLockBar(); }
+function logout(){ localStorage.removeItem("HEAVEN_ROLE"); ROLE=""; isAdmin=false; unlockedPastDate=""; document.body.classList.remove("viewer"); document.getElementById("loginScreen").style.display="flex"; document.getElementById("loginPass").value=""; }
 function checkAdmin(){ if(isAdmin) return true; alert("আপনি শেয়ারহোল্ডার। আপনি এডিট / যোগ / ডিলিট করতে পারবেন না। শুধু দেখতে ও কল করতে পারবেন।"); return false; }
 const firebaseConfig={apiKey:"AIzaSyAFZ85PVL7HkOswBIVUTJaIAFkWNsnMRAE",authDomain:"moshauzan-islami-jubo-songgo.firebaseapp.com",databaseURL:"https://moshauzan-islami-jubo-songgo-default-rtdb.firebaseio.com",projectId:"moshauzan-islami-jubo-songgo",storageBucket:"moshauzan-islami-jubo-songgo.firebasestorage.app",messagingSenderId:"1084297064431",appId:"1:1084297064431:web:f0b9aff31f23493f9d501a"};
 firebase.initializeApp(firebaseConfig);
