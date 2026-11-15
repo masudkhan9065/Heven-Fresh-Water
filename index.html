@@ -64,8 +64,6 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 #passModalBox{background:#0a2538;border:2px solid #00bfff;border-radius:12px;padding:18px;width:100%;max-width:360px;text-align:center}
 #passModalBox input{width:100%;padding:10px 42px 10px 10px;border-radius:6px;border:1px solid #00bfff;background:#061a2e;color:#fff;font-size:16px}
 .eyeBtn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;cursor:pointer}
-.cashBox{background:#0e2f4a;border:2px solid #00e676;border-radius:10px;padding:10px;margin-bottom:6px;line-height:1.8;text-align:center}
-.cashBox b{font-size:16px;color:#00e676}
 @media print{body{background:#fff}.app{border:none;max-width:100%;background:#fff;color:#000}.noPrint{display:none!important}.section{display:none!important}.section.printShow{display:block!important;background:#fff!important;color:#000!important;border:none}.section.printShow *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important} #passModal{display:none!important}}
 </style>
 </head>
@@ -85,7 +83,7 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 <div class="app">
 <div class="head"><b>💧 Heaven Fresh Water</b><br>বিশুদ্ধ পানি - সবার জন্য<br><span class="small">Masud Khan - <a href="tel:01723339065" style="color:#bfeaff">01723-339065</a></span><br><span class="small" style="background:#00bfff;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px">👥 মোট সদস্য: <span id="totalMembers">0</span> জন</span><br><span id="roleBadge" class="small" style="background:#ffca28;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px"></span> <button onclick="logout()" class="noPrint" style="background:#c62828;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px">লগআউট</button></div>
 <div class="cards">
-<div class="card"><small>আজকের বিক্রি</small><h2 id="todaySale">৳0</h2></div>
+<div class="card"><small id="todayCashLabel">আজকের ক্যাশ</small><h2 id="todaySale">৳0</h2></div>
 <div class="card"><small>মোট বকেয়া</small><h2 id="totalDue">৳0</h2></div>
 <div class="card"><small>কাস্টমারের কাছে জার</small><h2 id="totalJar">0 টি</h2></div>
 </div>
@@ -145,9 +143,8 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 </div>
 <input id="saleSearch2" placeholder="🔍 বিক্রির লিস্টে খুঁজুন - নাম লিখুন" class="inp" oninput="render()">
 <div style="background:#123a5a;padding:7px;border-radius:6px;margin-bottom:5px">
-<small>📅 তারিখ বাছুন - এই তারিখের ক্যাশ নিচে দেখাবে</small>
+<small>📅 তারিখ বাছুন - এই তারিখের ক্যাশ উপরে দেখাবে</small>
 <input id="printDate" type="date" class="inp" onchange="render()">
-<div id="saleCashBox" class="cashBox">লোড হচ্ছে...</div>
 <button class="btn btnY" onclick="printDailyByDate()">🖨️ এই তারিখের শিট প্রিন্ট</button>
 <button class="btn btnY" onclick="printDaily()">🖨️ আজকের বিক্রি শিট প্রিন্ট</button>
 </div>
@@ -326,7 +323,6 @@ function manLabel(man){ if(man=="মোঃ মাসুদ খান") return "�
 function splitByMan(list){ return {masud:list.filter(s=>getMan(s)=="মোঃ মাসুদ খান"), shahin:list.filter(s=>getMan(s)=="মোঃ শাহিন শেখ")}; }
 function getDateLabel(list){ if(!list.length) return ""; let ds=[...new Set(list.map(s=>s.date).filter(Boolean))].sort(); if(!ds.length) return ""; if(ds.length===1) return " | 📅 তারিখ: "+ds[0]; return " | 📅 তারিখ: "+ds[0]+" থেকে "+ds[ds.length-1]; }
 function safeMob(m){ if(!m) return "-"; let s=String(m).trim(); if(s==="0"||s==="") return "-"; return s; }
-// ঐ তারিখের ক্যাশ হিসাব
 function getCashForDate(d){
   let sales=D.sales.filter(s=>s.date==d);
   let bikri=sales.filter(s=>s.give>0);
@@ -472,12 +468,6 @@ function render(){
  let printD=document.getElementById("printDate").value;
  let sh=""; D.sales.filter(s=>s.name.toLowerCase().includes(sq) && (!printD || s.date==printD)).slice().reverse().slice(0,30).forEach(s=>{ sh+=`<div class="list"><b>${s.date} - ${s.name}</b> ${telLink(s.mob)} | 🫙 জার থাকলো ${jarThaklo(s)} টি | মোট ${fmt(s.total)} | জমা ${fmt(s.paid)} | বকেয়া ${fmt(s.due)}<div class="act">${callBtn(s.mob)}<button style="background:#ffca28" onclick="editSale(${s.id})">ঠিক করুন</button><button style="background:#c62828;color:#fff" onclick="delSale(${s.id})">X</button></div></div>`;});
  document.getElementById("saleList").innerHTML=sh||"<p class='small'>কোনো বিক্রি নাই</p>";
- // ঐ তারিখের ক্যাশ বক্স
- if(printD){
-   let cs=getCashForDate(printD);
-   let cashEl=document.getElementById("saleCashBox");
-   if(cashEl) cashEl.innerHTML=`📅 <b>${printD} তারিখের হিসাব</b><br>💧 বিক্রি: ${fmt(cs.saleTotal)} (${cs.jarGive} জার) | 💰 জমা: ${fmt(cs.salePaid)} | 🔴 বকেয়া: ${fmt(cs.saleDue)}<br>➕ অন্য আয়: ${fmt(cs.accInc+cs.don+cs.shr)} | ➖ ব্যয়+বেতন: ${fmt(cs.exp)}<br>💵 <b>এই তারিখের ক্যাশ: ${fmt(cs.cash)}</b>`;
- }
  let dq=(document.getElementById("dueSearch").value||"").toLowerCase();
  let from=document.getElementById("dueFrom") ? document.getElementById("dueFrom").value : "";
  let to=document.getElementById("dueTo") ? document.getElementById("dueTo").value : "";
@@ -498,14 +488,16 @@ function render(){
  let shh=""; let totShare=0; D.share.forEach(s=>{totShare+=s.amt; shh+=`<div class="list">${s.date} - ${s.name} - ${telLink(s.mob)} - ইনভেস্ট: ${fmt(s.amt)} ${callBtn(s.mob)} <button style="background:#ffca28;border:none;padding:2px 6px;border-radius:4px" onclick="editItem('share',${s.id})">ঠিক করুন</button> <button style="background:#c62828;color:#fff;border:none;padding:2px 6px;border-radius:4px" onclick="delItem('share',${s.id})">X</button></div>`;});
  document.getElementById("shareList").innerHTML=(shh||"<p class='small'>কোনো শেয়ারহোল্ডার নাই</p>")+`<p><b>মোট ইনভেস্ট: ${fmt(totShare)}</b></p>`;
  let today=getTodayStr();
- let todaySale=D.sales.filter(s=>s.date==today).reduce((a,b)=>a+b.total,0);
+ let cashDate=printD || today;
+ let cs=getCashForDate(cashDate);
+ document.getElementById("todaySale").innerText=fmt(cs.cash);
+ let lbl=document.getElementById("todayCashLabel"); if(lbl) lbl.innerText="আজকের ক্যাশ • "+cashDate;
  let totalDue=D.customers.reduce((a,b)=>a+b.bal,0);
  let totalJar=D.customers.reduce((a,b)=>a+b.jar,0);
  let saleInc=D.sales.reduce((a,b)=>a+b.paid,0);
  let accInc=D.acc.filter(x=>x.type=='inc').reduce((a,b)=>a+b.amt,0)+D.donation.reduce((a,b)=>a+b.amt,0)+D.share.reduce((a,b)=>a+b.amt,0);
  let accExp=D.acc.filter(x=>x.type=='exp').reduce((a,b)=>a+b.amt,0)+D.salary.filter(x=>x.status=='বেতন দিয়েছি').reduce((a,b)=>a+b.amt,0);
  let tInc=saleInc+accInc; let tExp=accExp;
- document.getElementById("todaySale").innerText=fmt(todaySale);
  document.getElementById("totalDue").innerText=fmt(totalDue);
  document.getElementById("totalJar").innerText=totalJar+" টি";
  document.getElementById("tInc").innerText=fmt(tInc);
