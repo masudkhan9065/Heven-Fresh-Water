@@ -15,7 +15,8 @@ body{background:#000;display:flex;justify-content:center}
 .head{text-align:center;padding:14px;border-bottom:2px solid #00bfff;color:#bfeaff}
 .head b{font-size:18px}
 .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:8px}
-.card{background:#0e2f4a;border:1px solid #00bfff;border-radius:8px;padding:6px;text-align:center}
+.card{background:#0e2f4a;border:1px solid #00bfff;border-radius:8px;padding:6px;text-align:center;cursor:pointer}
+.card:active{background:#1a5a8a;transform:scale(0.97)}
 .card h2{color:#bfeaff;font-size:12px}
 .card small{font-size:10px}
 .tabs{display:flex;flex-wrap:wrap;gap:4px;padding:0 8px}
@@ -83,14 +84,14 @@ body.viewer input.adminOnly, body.viewer select.adminOnly{display:none!important
 <div class="app">
 <div class="head"><b>💧 Heaven Fresh Water</b><br>বিশুদ্ধ পানি - সবার জন্য<br><span class="small">Masud Khan - <a href="tel:01723339065" style="color:#bfeaff">01723-339065</a></span><br><span class="small" style="background:#00bfff;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px">👥 মোট সদস্য: <span id="totalMembers">0</span> জন</span><br><span id="roleBadge" class="small" style="background:#ffca28;color:#000;padding:2px 10px;border-radius:10px;font-weight:800;display:inline-block;margin-top:4px"></span> <button onclick="logout()" class="noPrint" style="background:#c62828;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:10px;margin-top:4px">লগআউট</button></div>
 <div class="cards">
-<div class="card"><small id="todayCashLabel">আজকের ক্যাশ</small><h2 id="todaySale">৳0</h2></div>
-<div class="card"><small>মোট বকেয়া</small><h2 id="totalDue">৳0</h2></div>
-<div class="card"><small>কাস্টমারের কাছে জার</small><h2 id="totalJar">0 টি</h2></div>
+<div class="card" onclick="showCardDetail('todayCash')"><small id="todayCashLabel">আজকের ক্যাশ</small><h2 id="todaySale">৳0</h2><small>👆 চাপ দিন - বিস্তারিত</small></div>
+<div class="card" onclick="showCardDetail('totalDue')"><small>মোট বকেয়া</small><h2 id="totalDue">৳0</h2><small>👆 চাপ দিন - কে কত বাকি</small></div>
+<div class="card" onclick="showCardDetail('totalJar')"><small>কাস্টমারের কাছে জার</small><h2 id="totalJar">0 টি</h2><small>👆 চাপ দিন - কার কাছে কয়টা</small></div>
 </div>
 <div class="cards">
-<div class="card"><small>মোট আয়</small><h2 id="tInc">৳0</h2></div>
-<div class="card"><small>মোট ব্যয়</small><h2 id="tExp">৳0</h2></div>
-<div class="card"><small>ক্যাশে আছে</small><h2 id="cash">৳0</h2></div>
+<div class="card" onclick="showCardDetail('totalInc')"><small>মোট আয়</small><h2 id="tInc">৳0</h2><small>👆 চাপ দিন - বিস্তারিত</small></div>
+<div class="card" onclick="showCardDetail('totalExp')"><small>মোট ব্যয়</small><h2 id="tExp">৳0</h2><small>👆 চাপ দিন - বিস্তারিত</small></div>
+<div class="card" onclick="showCardDetail('cashInHand')"><small>ক্যাশে আছে</small><h2 id="cash">৳0</h2><small>👆 চাপ দিন - বিস্তারিত</small></div>
 </div>
 <div class="tabs noPrint">
 <button class="tab on" onclick="showTab('cust',this)">👥 কাস্টমার</button>
@@ -340,6 +341,63 @@ function getCashForDate(d){
   let inc=salePaid+accInc+don+shr;
   let exp=accExp+salPaid;
   return {saleTotal,salePaid,saleDue,jarGive,accInc,accExp,salPaid,don,shr,inc,exp,cash:inc-exp,count:sales.length};
+}
+function openPrint(title, html){
+  document.getElementById("printTitle").innerText=title;
+  document.getElementById("printBody").innerHTML=html;
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("on"));
+  document.getElementById("printArea").classList.add("on","printShow");
+}
+function showCardDetail(type){
+  if(type=='todayCash'){
+    let d=document.getElementById("printDate").value || getTodayStr();
+    let cs=getCashForDate(d);
+    let sales=D.sales.filter(s=>s.date==d);
+    let html=`<div class="printH3">💵 আজকের ক্যাশ - ${d}</div><div class="printSummary">মোট আয়: ${fmt(cs.inc)} - মোট ব্যয়: ${fmt(cs.exp)} = ক্যাশ: ${fmt(cs.cash)}</div><table><tr><td>💧 পানি বিক্রি (${cs.jarGive} জার)</td><td class="num">${cs.saleTotal}</td></tr><tr><td>💰 পানি থেকে জমা</td><td class="num">${cs.salePaid}</td></tr><tr><td>🔴 পানি বকেয়া</td><td class="num">${cs.saleDue}</td></tr><tr><td>➕ অন্যান্য আয়</td><td class="num">${cs.accInc}</td></tr><tr><td>❤️ অনুদান</td><td class="num">${cs.don}</td></tr><tr><td>🤝 শেয়ার</td><td class="num">${cs.shr}</td></tr><tr><td><b>মোট আয়</b></td><td class="num"><b>${cs.inc}</b></td></tr><tr><td>💸 অন্যান্য ব্যয়</td><td class="num">${cs.accExp}</td></tr><tr><td>👷 বেতন</td><td class="num">${cs.salPaid}</td></tr><tr><td><b>মোট ব্যয়</b></td><td class="num"><b>${cs.exp}</b></td></tr><tr><td><b>💵 আজকের ক্যাশ</b></td><td class="num"><b>${cs.cash}</b></td></tr></table><br><div class="printH4">📋 এই তারিখে যারা পানি নিছে / টাকা দিছে</div><table><colgroup><col style="width:7%"><col style="width:24%"><col style="width:19%"><col style="width:28%"><col style="width:22%"></colgroup><tr><th>ক্রঃ</th><th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>জমা</th></tr>${sales.map((s,i)=>`<tr><td class="num">${i+1}</td><td class="name">${s.name}</td><td class="mob">${safeMob(s.mob)}</td><td class="addr">${s.addr}</td><td class="num">${s.paid}</td></tr>`).join("") || `<tr><td colspan=5>এই তারিখে কোনো বিক্রি নাই</td></tr>`}</table>`;
+    openPrint("Heaven Fresh Water - আজকের ক্যাশ - "+d, html);
+  }
+  if(type=='totalDue'){
+    let list=D.customers.filter(c=>c.bal>0).sort((a,b)=>b.bal-a.bal);
+    let total=list.reduce((a,b)=>a+b.bal,0);
+    let html=`<div class="printH3">🔴 মোট বকেয়া - বিস্তারিত</div><div class="printSummary">মোট ${list.length} জন | মোট বকেয়া: ${fmt(total)}</div><table><colgroup><col style="width:7%"><col style="width:24%"><col style="width:19%"><col style="width:28%"><col style="width:22%"></colgroup><tr><th>ক্রঃ</th><th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>বকেয়া</th></tr>${list.map((c,i)=>`<tr><td class="num">${i+1}</td><td class="name">${c.name}</td><td class="mob">${safeMob(c.mob)}</td><td class="addr">${c.addr}</td><td class="num"><b>${c.bal}</b></td></tr>`).join("") || `<tr><td colspan=5>কারো বকেয়া নাই</td></tr>`}</table>`;
+    openPrint("Heaven Fresh Water - মোট বকেয়া বিস্তারিত", html);
+  }
+  if(type=='totalJar'){
+    let list=D.customers.filter(c=>c.jar>0).sort((a,b)=>b.jar-a.jar);
+    let total=list.reduce((a,b)=>a+b.jar,0);
+    let html=`<div class="printH3">🫙 কাস্টমারের কাছে জার - বিস্তারিত</div><div class="printSummary">মোট ${list.length} জন | মোট জার: ${total} টি</div><table><colgroup><col style="width:7%"><col style="width:24%"><col style="width:19%"><col style="width:28%"><col style="width:22%"></colgroup><tr><th>ক্রঃ</th><th>নাম</th><th>মোবাইল</th><th>ঠিকানা</th><th>জার</th></tr>${list.map((c,i)=>`<tr><td class="num">${i+1}</td><td class="name">${c.name}</td><td class="mob">${safeMob(c.mob)}</td><td class="addr">${c.addr}</td><td class="num"><b>${c.jar} টি</b></td></tr>`).join("") || `<tr><td colspan=5>কারো কাছে জার নাই</td></tr>`}</table>`;
+    openPrint("Heaven Fresh Water - জার বিস্তারিত", html);
+  }
+  if(type=='totalInc'){
+    let salePaid=D.sales.reduce((a,b)=>a+b.paid,0);
+    let accInc=D.acc.filter(x=>x.type=='inc').reduce((a,b)=>a+b.amt,0);
+    let don=D.donation.reduce((a,b)=>a+b.amt,0);
+    let shr=D.share.reduce((a,b)=>a+b.amt,0);
+    let total=salePaid+accInc+don+shr;
+    let html=`<div class="printH3">💰 মোট আয় - বিস্তারিত</div><div class="printSummary">মোট আয়: ${fmt(total)}</div><table><tr><td>💧 পানি থেকে জমা</td><td class="num">${salePaid}</td></tr><tr><td>➕ অন্যান্য আয়</td><td class="num">${accInc}</td></tr><tr><td>❤️ অনুদান</td><td class="num">${don}</td></tr><tr><td>🤝 শেয়ার / ইনভেস্ট</td><td class="num">${shr}</td></tr><tr><td><b>মোট আয়</b></td><td class="num"><b>${total}</b></td></tr></table><br><div class="printH4">📋 অন্যান্য আয়ের বিবরণ</div><table><tr><th>তারিখ</th><th>বিবরণ</th><th>টাকা</th></tr>${D.acc.filter(x=>x.type=='inc').slice().reverse().map(s=>`<tr><td class="num">${s.date}</td><td style="text-align:left">${s.desc}</td><td class="num">${s.amt}</td></tr>`).join("") || `<tr><td colspan=3>কোনো অন্য আয় নাই</td></tr>`}</table><br><div class="printH4">❤️ অনুদান</div><table><tr><th>তারিখ</th><th>নাম</th><th>টাকা</th></tr>${D.donation.slice().reverse().map(s=>`<tr><td class="num">${s.date}</td><td class="name">${s.name}</td><td class="num">${s.amt}</td></tr>`).join("") || `<tr><td colspan=3>কোনো অনুদান নাই</td></tr>`}</table>`;
+    openPrint("Heaven Fresh Water - মোট আয় বিস্তারিত", html);
+  }
+  if(type=='totalExp'){
+    let accExpList=D.acc.filter(x=>x.type=='exp');
+    let accExp=accExpList.reduce((a,b)=>a+b.amt,0);
+    let salList=D.salary.filter(x=>x.status=='বেতন দিয়েছি');
+    let salPaid=salList.reduce((a,b)=>a+b.amt,0);
+    let total=accExp+salPaid;
+    let html=`<div class="printH3">💸 মোট ব্যয় - বিস্তারিত</div><div class="printSummary">মোট ব্যয়: ${fmt(total)}</div><table><tr><td>💸 অন্যান্য ব্যয়</td><td class="num">${accExp}</td></tr><tr><td>👷 বেতন</td><td class="num">${salPaid}</td></tr><tr><td><b>মোট ব্যয়</b></td><td class="num"><b>${total}</b></td></tr></table><br><div class="printH4">📋 ব্যয়ের বিবরণ</div><table><tr><th>তারিখ</th><th>বিবরণ</th><th>টাকা</th></tr>${accExpList.slice().reverse().map(s=>`<tr><td class="num">${s.date}</td><td style="text-align:left">${s.desc}</td><td class="num">${s.amt}</td></tr>`).join("") || `<tr><td colspan=3>কোনো ব্যয় নাই</td></tr>`}</table><br><div class="printH4">👷 বেতন</div><table><tr><th>তারিখ</th><th>নাম</th><th>টাকা</th></tr>${salList.slice().reverse().map(s=>`<tr><td class="num">${s.date}</td><td class="name">${s.name}</td><td class="num">${s.amt}</td></tr>`).join("") || `<tr><td colspan=3>কোনো বেতন নাই</td></tr>`}</table>`;
+    openPrint("Heaven Fresh Water - মোট ব্যয় বিস্তারিত", html);
+  }
+  if(type=='cashInHand'){
+    let salePaid=D.sales.reduce((a,b)=>a+b.paid,0);
+    let accInc=D.acc.filter(x=>x.type=='inc').reduce((a,b)=>a+b.amt,0);
+    let don=D.donation.reduce((a,b)=>a+b.amt,0);
+    let shr=D.share.reduce((a,b)=>a+b.amt,0);
+    let inc=salePaid+accInc+don+shr;
+    let accExp=D.acc.filter(x=>x.type=='exp').reduce((a,b)=>a+b.amt,0);
+    let salPaid=D.salary.filter(x=>x.status=='বেতন দিয়েছি').reduce((a,b)=>a+b.amt,0);
+    let exp=accExp+salPaid;
+    let html=`<div class="printH3">💵 ক্যাশে আছে - বিস্তারিত</div><div class="printSummary">মোট আয়: ${fmt(inc)} - মোট ব্যয়: ${fmt(exp)} = ক্যাশে আছে: ${fmt(inc-exp)}</div><table><tr><td>💧 পানি থেকে জমা</td><td class="num">${salePaid}</td></tr><tr><td>➕ অন্যান্য আয়</td><td class="num">${accInc}</td></tr><tr><td>❤️ অনুদান</td><td class="num">${don}</td></tr><tr><td>🤝 শেয়ার</td><td class="num">${shr}</td></tr><tr><td><b>মোট আয়</b></td><td class="num"><b>${inc}</b></td></tr><tr><td>💸 অন্যান্য ব্যয়</td><td class="num">${accExp}</td></tr><tr><td>👷 বেতন</td><td class="num">${salPaid}</td></tr><tr><td><b>মোট ব্যয়</b></td><td class="num"><b>${exp}</b></td></tr><tr><td><b>💵 ক্যাশে আছে</b></td><td class="num"><b>${inc-exp}</b></td></tr></table>`;
+    openPrint("Heaven Fresh Water - ক্যাশে আছে বিস্তারিত", html);
+  }
 }
 function manSheetBlock(title, list){
   if(!list.length) return `<div class="printManHead">${title}</div><p style="text-align:center;padding:8px">এই শিটে কোনো এন্ট্রি নাই</p>`;
