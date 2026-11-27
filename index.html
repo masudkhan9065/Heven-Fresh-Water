@@ -127,6 +127,62 @@ function printAcc(){var d=document.getElementById("aDate").value||WD();var l=D.a
 function printDonation(){var l=D.donation.slice().reverse();openPrint("অনুদান",'<table><tr><th>ক্রমিক</th><th>তারিখ</th><th>নাম</th><th>টাকা</th></tr>'+l.map(function(s,i){return '<tr><td>'+(i+1)+'</td><td>'+s.date+'</td><td class="name">'+s.name+'</td><td>'+s.amt+'</td></tr>'}).join("")+'</table>')}
 function printShare(){var l=D.share.slice().reverse();openPrint("শেয়ার",'<table><tr><th>ক্রমিক</th><th>তারিখ</th><th>নাম</th><th>টাকা</th></tr>'+l.map(function(s,i){return '<tr><td>'+(i+1)+'</td><td>'+s.date+'</td><td class="name">'+s.name+'</td><td>'+s.amt+'</td></tr>'}).join("")+'</table>')}
 function printDueRange(){var f=document.getElementById("dueFrom").value,t=document.getElementById("dueTo").value;if(!f||!t)return alert("দুইটা তারিখ বাছুন");var rows=getDueRange(f,t);openPrint(f+" থেকে "+t+" বকেয়া",'<div class="printSummary">মোট '+rows.length+' জন</div><table><tr><th>ক্রমিক</th><th>নাম</th><th>মোবাইল</th><th>বকেয়া</th></tr>'+rows.map(function(r,i){return '<tr class="clickRow" onclick="showHistory('+r.cid+')"><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+r.mob+'</td><td>'+r.curBal+'</td></tr>'}).join("")+'</table>')}
-function printDaily(){var t=TS();var cs=getCash(t);var s=D.sales.filter(function(x){return x.date==t});var sp=splitByMan(s);openPrint("আজকের শিট",'<div class="printSummary">ক্যাশ: '+fmt(cs.cash)+'</div>'+manBlock("মোঃ মাসুদ খান",sp.masud)+manBlock("ডেলিভারি ম্যান: মোঃ শাহিন শেখ",sp.shahin))}
+function printDaily(){var t=TS();var cs=getCash(d);var s=D.sales.filter(function(x){return x.date==t});var sp=splitByMan(s);openPrint("আজকের শিট",'<div class="printSummary">ক্যাশ: '+(cs.cash<0?'<span style="color:#ff1744;font-weight:800">('+Math.abs(cs.cash).toLocaleString()+')</span>':fmt(cs.cash))+'</div>'+manBlock("মোঃ মাসুদ খান",sp.masud)+manBlock("ডেলিভারি ম্যান: মোঃ শাহিন শেখ",sp.shahin))}
 function printDailyByDate(){var d=document.getElementById("printDate").value;if(!d)return alert("তারিখ বাছুন");var cs=getCash(d);var s=D.sales.filter(function(x){return x.date==d});var sp=splitByMan(s);openPrint(d+" শিট",'<div class="printSummary">ক্যাশ: '+fmt(cs.cash)+'</div>'+manBlock("মোঃ মাসুদ খান",sp.masud)+manBlock("ডেলিভারি ম্যান: মোঃ শাহিন শেখ",sp.shahin))}
-</script></body></html>
+</script><script>
+setInterval(function(){var e=document.getElementById('cash');if(e){var t=e.textContent.replace(/[^0-9-]/g,'');var n=parseInt(t||'0');if(n<0){e.innerHTML='<span style="color:#ff1744;font-weight:800">('+Math.abs(n).toLocaleString()+')</span>';}}},300);
+</script>
+ <script>
+<script>
+// --- ইব্রাহিম পাশা + বোতল / ডিসপেনসার ---
+// ১. বিক্রির ফর্মে ২টা নতুন ঘর বানাই
+setTimeout(function(){
+  var priceBox = document.getElementById("sPrice");
+  if(priceBox && !document.getElementById("sBottleAmt")){
+    var b = document.createElement("input");
+    b.id = "sBottleAmt"; b.type = "number"; b.placeholder = "বোতল টাকা - যেমন 300"; b.className = "inp";
+    var d = document.createElement("input");
+    d.id = "sDispenserAmt"; d.type = "number"; d.placeholder = "ডিসপেনসার টাকা - যেমন 250"; d.className = "inp";
+    priceBox.after(d); priceBox.after(b);
+  }
+}, 1000);
+
+// ২. পুরানো addSale কে ধরে রাখি, নতুন করে বানাই
+var _oldAddSale = addSale;
+addSale = async function(){
+  var bottleAmt = parseInt(document.getElementById("sBottleAmt")?.value || 0);
+  var dispAmt = parseInt(document.getElementById("sDispenserAmt")?.value || 0);
+  var extra = bottleAmt + dispAmt;
+  var beforeLen = D.sales.length;
+  await _oldAddSale();
+  // যদি নতুন বিক্রি যোগ হয়ে থাকে, তাইলে তার সাথে বোতল+ডিসপেনসার যোগ করি
+  if(D.sales.length > beforeLen && extra > 0){
+    var last = D.sales[D.sales.length-1];
+    last.total = (last.total||0) + extra;
+    last.bottleAmt = bottleAmt;
+    last.dispenserAmt = dispAmt;
+    last.note = "বোতল:"+bottleAmt+" + ডিসপেনসার:"+dispAmt;
+    var c = D.customers.find(function(x){ return x.id==last.cid });
+    if(c) c.bal = (c.bal||0) + extra;
+    save(); render(); renderReport();
+    document.getElementById("sBottleAmt").value = "";
+    document.getElementById("sDispenserAmt").value = "";
+    alert(c.name + " - পানি + বোতল "+bottleAmt+" + ডিসপেনসার "+dispAmt+" = মোট "+last.total+" টাকা - শাহিন/মাসুদ তালিকায় চলে গেছে");
+  }
+};
+
+// ৩. ইব্রাহিম পাশাকে এক ক্লিকে বানানো - চাইলে কনসোলে লিখবেন: addIbrahim()
+function addIbrahim(){
+  var c = D.customers.find(function(x){ return x.name=="ইব্রাহিম পাশা" });
+  if(!c){
+    c = {id: Date.now(), name:"ইব্রাহিম পাশা", mob:"", addr:"", jar:0, bal:0, fav:false, customPrice:50};
+    D.customers.push(c);
+  }
+  var d = new Date().toISOString().slice(0,10);
+  var total = 300 + 250 + 50; // বোতল 300 + ডিসপেনসার 250 + পানি 50 = 600
+  D.sales.push({id:Date.now()+1, cid:c.id, name:c.name, mob:c.mob, addr:c.addr, date:d, give:1, back:0, price:50, total:total, paid:0, due:total, deliveryMan:"মোঃ মাসুদ খান", bottleAmt:300, dispenserAmt:250, note:"বোতল:300 + ডিসপেনসার:250 + পানি:50"});
+  c.bal = (c.bal||0) + total;
+  save(); render(); renderReport();
+  alert("হইছে! ইব্রাহিম পাশা - মোট 600 টাকা - মাসুদ তালিকায় দেখেন");
+}
+</script>
